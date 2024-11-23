@@ -16,6 +16,8 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
+from sensor_msgs import Joy
+from geometry_msgs import Twist
 
 
 class KeyMapping(Node):
@@ -23,18 +25,40 @@ class KeyMapping(Node):
     def __init__(self):
         super().__init__('key_mapping') # name of the node
         self.subscription = self.create_subscription(
-            String, # message type of the topic
-            'topic', # name of the topic
+            Joy, # message type of the topic
+            'joy', # name of the topic
             self.listener_callback, # callback, executes when there's an update in topic
             10)
         
         self.subscription  # prevent unused variable warning
 
+        self.command_publisher = self.create_publisher(
+            Twist, # command message type
+            'com_vel',
+            10
+        )
         self.get_logger().info("Key mapping initialized!!")
-        # Add the publishing part
 
     def listener_callback(self, msg):
-        self.get_logger().info('I heard: "%s"' % msg.data)
+        self.get_logger().info('Joystick data received.')
+
+        # Create a Twist message
+        twist = Twist()
+
+        # Map joystick axes to linear and angular velocities
+        twist.linear.x = msg.axes[1]  # Forward/Backward
+        twist.linear.y = msg.axes[0]  # Left/Right
+        twist.linear.z = 0.0
+
+        twist.angular.x = 0.0
+        twist.angular.y = 0.0
+        twist.angular.z = msg.axes[3]  # Rotation
+
+        # Publish the Twist message
+        self.command_publisher.publish(twist)
+        self.get_logger().info(f'Published Twist: {twist}')
+
+
 
 
 def main(args=None):
