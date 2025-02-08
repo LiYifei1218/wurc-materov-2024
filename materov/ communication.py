@@ -24,7 +24,7 @@ class Communication(Node):
         super().__init__('communication') # name of the node
         self.subscription = self.create_subscription(
             String, # message type of the topic
-            'topic', # name of the topic
+            'communication', # name of the topic
             self.listener_callback, # callback, executes when there's an update in topic
             10)
         self.subscription  # prevent unused variable warning

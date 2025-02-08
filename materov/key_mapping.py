@@ -16,8 +16,8 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-from sensor_msgs import Joy
-from geometry_msgs import Twist
+from sensor_msgs.msg import Joy
+from geometry_msgs.msg import Twist
 
 
 class KeyMapping(Node):
@@ -30,11 +30,15 @@ class KeyMapping(Node):
             self.listener_callback, # callback, executes when there's an update in topic
             10)
         
-        self.subscription  # prevent unused variable warning
-
         self.command_publisher = self.create_publisher(
             Twist, # command message type
             'com_vel',
+            10
+        )
+
+        self.button_publisher = self.create_publisher(
+            String, # button message type
+            'button_commands',
             10
         )
         self.get_logger().info("Key mapping initialized!!")
@@ -58,7 +62,34 @@ class KeyMapping(Node):
         self.command_publisher.publish(twist)
         self.get_logger().info(f'Published Twist: {twist}')
 
+        # Create a Button message
+        button_msg = String() 
 
+        # Claw control (LT and RT)
+        if msg.axes[2] > 0.5:
+            button_msg.data = 'Rotate Claw Counter Clockwise'
+            self.button_publisher.publish(button_msg)
+        elif msg.axes[5] > 0.5:
+            button_msg.data = 'Rotate Claw Clockwise'
+            self.button_publisher.publish(button_msg)
+
+        # Claw grip control (LB and RB)
+        if msg.buttons[4]:
+            button_msg.data = 'Open Claw'
+            self.button_publisher.publish(button_msg)
+        if msg.buttons[5]:
+            button_msg.data = 'Close Claw'
+            self.button_publisher.publish(button_msg)
+
+        # Camera Capture Button (A)
+        if msg.buttons[0]: # Button 1 - ZED depth camera
+            button_msg.data = 'Capture Depth Image'
+            self.button_publisher.publish(button_msg)
+        if msg.buttons[1]: # Button 2 - 360 camera
+            button_msg.data = 'Capture 360 Image'
+            self.button_publisher.publish(button_msg)
+
+        self.get_logger().info(f'Published Button: {button_msg}')
 
 
 def main(args=None):
